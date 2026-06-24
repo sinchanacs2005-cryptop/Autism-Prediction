@@ -38,7 +38,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ------------------- Pydantic Input Schema -------------------
+# ------------------- Input Schema -------------------
 class Payload(BaseModel):
     age: int = Field(..., ge=1, le=100)
     gender: str
@@ -69,32 +69,75 @@ def home():
 def predict_asd(data: Payload):
     input_dict = data.model_dump()
 
-    # Calculate 'result' dynamically
+    # Total A-score
     a_scores = [input_dict[f"A{i}_Score"] for i in range(1, 11)]
     input_dict['result'] = float(sum(a_scores))
 
-    # Encode categorical features
-    categorical_features = ['gender', 'ethnicity', 'jaundice', 'contry_of_res', 'autism', 'used_app_before', 'relation']
+    categorical_features = [
+        'gender', 'ethnicity', 'jaundice', 'contry_of_res',
+        'autism', 'used_app_before', 'relation'
+    ]
+
     for feature in categorical_features:
-        value = input_dict[feature].strip()
+        value = str(input_dict[feature]).strip()
+
+        # ------------------- Normalize inputs -------------------
+        value_lower = value.lower()
+
+        if feature == "gender":
+            if value_lower in ["male", "m"]:
+                value = "m"
+            elif value_lower in ["female", "f"]:
+                value = "f"
+            else:
+                value = "m"  # default fallback
+
+        elif feature in ["jaundice", "autism", "used_app_before"]:
+            if value_lower in ["yes", "y"]:
+                value = "yes"
+            elif value_lower in ["no", "n"]:
+                value = "no"
+            else:
+                value = "no"  # default fallback
+
+        elif feature == "relation":
+            # Only 'Self' or 'Others' in training
+            if value_lower != "self":
+                value = "Others"
+
+        elif feature in ["ethnicity", "contry_of_res"]:
+            # Try case-insensitive match to training encoder classes
+            found = False
+            for cls in encoders[feature].classes_:
+                if cls.lower() == value_lower:
+                    value = cls
+                    found = True
+                    break
+            if not found:
+                value = encoders[feature].classes_[0]  # fallback to first class
+
+        input_dict[feature] = value
+
+        # ------------------- Encode using LabelEncoder -------------------
         if feature in encoders:
             try:
                 input_dict[feature] = encoders[feature].transform([value])[0]
             except ValueError:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Invalid value '{value}' for feature '{feature}'. Must be one of trained categories."
+                    detail=f"Invalid value '{value}' for feature '{feature}'. "
+                           f"Must be one of trained categories: {list(encoders[feature].classes_)}"
                 )
         else:
             raise HTTPException(status_code=500, detail=f"Missing encoder for feature: {feature}")
 
-    # Ensure feature order matches training
+    # ------------------- Prepare features vector -------------------
     try:
         features_vector = np.array([[input_dict[f] for f in model_features]])
     except KeyError as e:
         raise HTTPException(status_code=400, detail=f"Missing expected input feature: {e}")
 
-    # Prediction
+    # ------------------- Prediction -------------------
     prediction_proba = model.predict_proba(features_vector)[0]
     predicted_class = np.argmax(prediction_proba)
     confidence = prediction_proba[predicted_class]

@@ -146,6 +146,7 @@ const Form = ({ onSubmit, isLoading }) => {
     const demographicFields = [
         { name: "age", type: "number", placeholder: "Age (Years)", required: true },
     ];
+    
 
     const selectFields = [
         { name: "gender", options: ["Male", "Female"], label: "Gender", required: true },
@@ -331,9 +332,9 @@ export default function App() {
 
                 if (!res.ok) {
                     // This handles 404, 422, 500 errors from the server
-                    const errorJson = await res.json();
-                    console.error("Server Error Response:", errorJson);
-                    throw new Error(`Server returned error status: ${res.status}. Detail: ${JSON.stringify(errorJson)}`);
+                  //  const errorJson = await res.json();
+                  //  console.error("Server Error Response:", errorJson);
+                  //  throw new Error(`Server returned error status: ${res.status}. Detail: ${JSON.stringify(errorJson)}`);
                 }
 
                 const json = await res.json();

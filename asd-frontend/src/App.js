@@ -338,7 +338,7 @@ export default function App() {
         localStorage.getItem("isLoggedIn") === "true"
     );
     // Moved apiUrl definition to the component scope to be accessible by renderContent
-    const apiUrl = "http://127.0.0.1:8000/api/predict"; // CRITICAL FIX: Correct endpoint path
+    const apiUrl = "https://autism-prediction-mo4b.onrender.com/api/predict"; // CRITICAL FIX: Correct endpoint path
 
     const handleSubmit = async (data) => {
         setIsLoading(true);

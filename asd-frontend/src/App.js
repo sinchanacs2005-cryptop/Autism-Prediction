@@ -1,3 +1,5 @@
+import RegisterPage from "./RegisterPage";
+import LoginPage from "./LoginPage";
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 
@@ -53,13 +55,30 @@ const LoaderIcon = ({ className = 'animate-spin', ...props }) => (
 const Navbar = () => (
     <header className="w-full bg-white/80 backdrop-blur-md shadow-lg sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+
             <div className="flex items-center space-x-2">
                 <UsersIcon className="text-indigo-600 w-6 h-6" />
                 <h1 className="text-xl font-bold text-gray-800 tracking-tight">
                     ASD Spectrum Screener
                 </h1>
             </div>
-            <span className="text-sm text-gray-500 hidden sm:block">AI-Powered Preliminary Assessment</span>
+
+            <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-500 hidden sm:block">
+                    AI-Powered Preliminary Assessment
+                </span>
+
+                <button
+                    onClick={() => {
+                        localStorage.removeItem("isLoggedIn");
+                        window.location.reload();
+                    }}
+                    className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
+                >
+                    Logout
+                </button>
+            </div>
+
         </div>
     </header>
 );
@@ -70,7 +89,7 @@ const Footer = () => (
             <p className="text-xs text-gray-400">
                 **Disclaimer:** This tool provides a predictive model result and is not a substitute for professional medical diagnosis. Consult a qualified healthcare professional for any medical concerns.
             </p>
-            <p className="mt-2 text-sm">&copy; {new Date().getFullYear()} ASD Prediction Project</p>
+            <p className="mt-2 text-sm">&copy; {new Date().getFullYear()}Developed by Sinchana C S | Autism Spectrum Disorder Prediction Using Machine Learning </p>
         </div>
     </footer>
 );
@@ -79,7 +98,11 @@ const Footer = () => (
 
 const ResultCard = ({ result, onReset }) => {
     // The result from the backend is the 'label' string (e.g., "Autism Spectrum Disorder Detected")
-    const isPositive = result.includes("Detected"); 
+    const label = result.label;
+    const confidence = Math.round(result.confidence * 100);
+
+    const isPositive =
+        label === "Autism Spectrum Disorder Detected"; 
     const icon = isPositive ? (
         <AlertCircleIcon className="w-12 h-12 text-red-500" />
     ) : (
@@ -99,8 +122,28 @@ const ResultCard = ({ result, onReset }) => {
             transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
         >
             <div className="flex justify-center mb-4">{icon}</div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">{title}</h2>
-            <p className="text-md font-semibold text-gray-700 mb-2">Result: {result}</p>
+            <h2 className="text-3xl font-bold text-gray-800 mb-2">{title}</h2>
+            <div className="w-full bg-gray-200 rounded-full h-4 mt-4">
+                <div
+                    className={`h-4 rounded-full ${
+                    isPositive ? "bg-red-500" : "bg-green-500"
+                    }`}
+                    style={{ width: `${confidence}%` }}
+                />
+                </div>
+
+                <p className="mt-2 text-sm text-gray-600">Confidence: {confidence}%</p>
+                <div className="mt-4 p-4 rounded-xl bg-gray-50">
+                    <p className="text-sm text-gray-500">
+                        Prediction Result
+                    </p>
+
+                    <p className={`text-xl font-bold ${
+                        isPositive ? "text-red-600" : "text-green-600"
+                    }`}>
+                        {label}
+                    </p>
+                </div>
             <p className="text-sm text-gray-600 mb-6">{message}</p>
             <motion.button
                 onClick={onReset}
@@ -289,7 +332,11 @@ export default function App() {
     const [result, setResult] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isError, setIsError] = useState(false);
-    
+    const [page, setPage] = useState("register");
+
+    const [isLoggedIn, setIsLoggedIn] = useState(
+        localStorage.getItem("isLoggedIn") === "true"
+    );
     // Moved apiUrl definition to the component scope to be accessible by renderContent
     const apiUrl = "http://127.0.0.1:8000/api/predict"; // CRITICAL FIX: Correct endpoint path
 
@@ -341,7 +388,7 @@ export default function App() {
                 
                 // CRITICAL FIX: Check for the 'label' key from your backend response
                 if (json && json.label) {
-                    setResult(json.label); 
+                    setResult(json); 
                     setIsLoading(false);
                     return; // Success, exit function
                 } else {
@@ -410,23 +457,114 @@ export default function App() {
         return <Form onSubmit={handleSubmit} isLoading={isLoading} />;
     };
 
+    if (!isLoggedIn) {
+
+        if (page === "register") {
+            return (
+            <RegisterPage
+                onRegisterSuccess={() =>
+                setPage("login")
+                }
+            />
+            );
+        }
+
+        return (
+            <LoginPage
+            onLoginSuccess={() =>
+                setIsLoggedIn(true)
+            }
+            goToRegister={() =>
+                setPage("register")
+            }
+            />
+        );
+    }
     return (
         <div className="flex flex-col min-h-screen font-inter">
             <Navbar />
+
             <main className="flex flex-col items-center flex-grow p-4 pt-12">
-                {renderContent()}
+
+            {/* Hero Section */}
+            <motion.div
+                className="text-center max-w-4xl mb-12"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+            >
+                <h1 className="text-5xl md:text-6xl font-extrabold text-indigo-800 mb-4">
+                Autism Spectrum Disorder Prediction
+                </h1>
+
+                <p className="text-lg text-gray-700 leading-relaxed px-4">
+                AI-powered screening system designed to assist in identifying
+                Autism Spectrum Disorder traits through behavioral assessment
+                and machine learning analysis.
+                </p>
+            </motion.div>
+            {/* Awareness Banner */}
+            <div className="bg-white rounded-2xl shadow-md p-4 mb-8 max-w-4xl w-full">
+                <p className="text-gray-700 text-center">
+                    🧩 Early screening can help identify developmental needs and
+                    support timely intervention. This tool is intended for educational
+                    and preliminary assessment purposes only.
+                </p>
+            </div>
+            {/* Feature Cards */}
+            {!result && !isLoading && (
+                <div className="grid md:grid-cols-3 gap-6 mb-10 max-w-6xl w-full px-4">
+                <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition">
+                    <h3 className="font-bold text-indigo-700 text-lg mb-2">
+                    🤖 Machine Learning
+                    </h3>
+                    <p className="text-gray-600">
+                    Uses trained ASD prediction models to analyze behavioral patterns.
+                    </p>
+                </div>
+
+                <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition">
+                    <h3 className="font-bold text-indigo-700 text-lg mb-2">
+                    ⚡ Fast Screening
+                    </h3>
+                    <p className="text-gray-600">
+                    Complete the assessment within a few minutes.
+                    </p>
+                </div>
+
+                <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition">
+                    <h3 className="font-bold text-indigo-700 text-lg mb-2">
+                    📊 Confidence Results
+                    </h3>
+                    <p className="text-gray-600">
+                    Provides prediction outcomes with confidence indicators.
+                    </p>
+                </div>
+                </div>
+            )}
+
+            {renderContent()}
+
             </main>
+
             <Footer />
-            {/* Global Style for Inter font and background */}
+
             <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
-                .font-inter {
-                    font-family: 'Inter', sans-serif;
-                }
-                body {
-                    background: linear-gradient(135deg, #e0f2fe 0%, #c7d2fe 100%);
-                }
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+
+            .font-inter {
+                font-family: 'Inter', sans-serif;
+            }
+
+            body {
+                background: linear-gradient(
+                135deg,
+                #f8fafc 0%,
+                #dbeafe 50%,
+                #eef2ff 100%
+                );
+            }
             `}</style>
+
         </div>
     );
 }

@@ -57,7 +57,11 @@ const Navbar = () => (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
 
             <div className="flex items-center space-x-2">
-                <UsersIcon className="text-indigo-600 w-6 h-6" />
+                <img
+                    src="/logo.png"
+                    alt="ASD Prediction Logo"
+                    className="w-10 h-10 rounded-xl shadow-md"
+                />
                 <h1 className="text-xl font-bold text-gray-800 tracking-tight">
                     ASD Spectrum Screener
                 </h1>

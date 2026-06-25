@@ -29,16 +29,14 @@ origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "https://autism-prediction-rho.vercel.app"
+    "https://autism-prediction-8mk4dbt1o-sinchu.vercel.app",
+    "https://autism-prediction-git-main-sinchu.vercel.app",
 
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "https://autism-prediction-rho.vercel.app",
-    ],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
